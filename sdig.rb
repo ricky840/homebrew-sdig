@@ -17,7 +17,7 @@ def add_ip_to_host(ipaddr, domain)
   if system(cmd)
     puts "Succesfully added"
   else
-    puts "Oops something happend, see if it was added yourself!"
+    puts "Oops something happend, see if it was added by yourself!"
   end
 end
 
@@ -48,12 +48,6 @@ if not staging_ip == "NoIPwasFound"
     end
   end
 elsif staging_ip =="NoIPwasFound"
- puts "It seems the domain is not on Akamai"
+ puts "The domain is not on Akamai"
  puts %x(dig #{domain})
 end
-
-
-
-
-
-
