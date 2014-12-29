@@ -6,12 +6,19 @@ A little script does DNS lookup to get Akamai staging IP address.
 Usage
 ====
 
-cmd> sdig.rb www.domain.com
+$ sdig.rb www.domain.com <options>
+
+
+Options
+====
+
+-: remove domain from the host file.
 
 
 Example
 ====
 
+To add staging network IP to host file.
 ```
 [ryu@workbox ~ ]$ sdig www.samsung.com
 Staging IPs:
@@ -22,5 +29,10 @@ Password:
 Succesfully added
 ```
 
-
-
+To remove from the host file.
+```
+[ryu@workbox]$ ./sdig.rb www.samsung.com -
+Password:
+Entry removed
+[ryu@workbox]$
+```

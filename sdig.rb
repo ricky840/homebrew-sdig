@@ -4,6 +4,10 @@ unless (ARGV.length == 2 and ARGV[1] == '-') or ARGV.length == 1
   puts "\n"
   puts "Usage:"
   puts "   sdig www.domain.com"
+  puts "   sdig www.domain.com <options>"
+  puts "\n"
+  puts "Options:"
+  puts "   -   Remove entry from the host file"
   puts "\n"
   exit
 end
@@ -13,16 +17,16 @@ def add_ip_to_host(ipaddr, domain)
   if arr_ip.length > 1
     ipaddr = arr_ip.first
   end
-  cmd = "sudo sh -c 'echo #{ipaddr.strip} #{domain.strip} >> /etc/hosts; killall -HUP mDNSResponder'"
+  cmd = "sudo sh -c 'echo #{ipaddr.strip} #{domain.strip} >> /etc/hosts'"
   if system(cmd)
     puts "Succesfully added"
   else
-    puts "Oops something happend, see if it was added yourself!"
+    puts "Oops something happend, you might want to add it manually"
   end
 end
 
 domain = ARGV[0]
-if ARGV.length == 1 #add ip
+if ARGV.length == 1
   staging_ip = "NoIPwasFound"
   arr_result = %x(dig #{domain} +short).split("\n")
   arr_result.each do |each|
@@ -52,8 +56,8 @@ if ARGV.length == 1 #add ip
    puts "It seems the domain is not on Akamai"
    puts %x(dig #{domain})
   end
-else #remove entry
-  cmd = %Q[sudo sh -c 'sed -i "" "/.*#{domain}/d" /etc/hosts; killall -HUP mDNSResponder']
+else
+  cmd = %Q[sudo sh -c 'sed -i "" "/.*#{domain}/d" /etc/hosts']
   if system(cmd)
     puts "Entry removed"
   else
