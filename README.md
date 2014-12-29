@@ -1,4 +1,4 @@
-sdig
+Sdig
 ====
 
 A little script does DNS lookup to get Akamai staging IP address.
@@ -6,13 +6,13 @@ A little script does DNS lookup to get Akamai staging IP address.
 Usage
 ====
 
-$ sdig.rb www.domain.com <options>
+$ sdig.rb www.domain.com options
 
 
 Options
 ====
 
--: remove domain from the host file.
+ -:   Remove domain from the host file.
 
 
 Example
@@ -31,8 +31,7 @@ Succesfully added
 
 To remove from the host file.
 ```
-[ryu@workbox]$ ./sdig.rb www.samsung.com -
+[ryu@workbox]$ sdig.rb www.samsung.com -
 Password:
 Entry removed
-[ryu@workbox]$
 ```
