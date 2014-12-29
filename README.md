@@ -1,7 +1,7 @@
 sdig
 ====
 
-A little script does DNS lookup to get Akamai staging IP address. 
+A little script does DNS lookup to get Akamai staging IP address.
 
 Usage
 ====
