@@ -31,7 +31,7 @@ Succesfully added
 
 To remove from the host file.
 ```
-[ryu@workbox]$ sdig.rb www.samsung.com -
+[ryu@workbox]$ sdig www.samsung.com -
 Password:
 Entry removed
 ```
