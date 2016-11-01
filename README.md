@@ -6,14 +6,17 @@ A little script does DNS lookup to get Akamai staging IP address.
 Usage
 ====
 
-$ sdig.rb www.domain.com options
+$ sdig www.domain.com <options>
 
+Installation (using homebrew)
+====
+
+$ brew install https://raw.githubusercontent.com/ricky840/sdig/master/akamai-get-staging-ip.rb
 
 Options
 ====
 
  -:   Remove domain from the host file.
-
 
 Example
 ====
