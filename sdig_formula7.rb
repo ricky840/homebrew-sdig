@@ -6,8 +6,7 @@ class SdigFormula7 < Formula
   version "0.1"
 
   def install
-    system "ls -al"
-    bin.install "sdig_formula7.rb"
+    bin.install "./sdig.rb"
   end
 
   test do
