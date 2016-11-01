@@ -1,4 +1,4 @@
-class SdigFormula6 < Formula
+class SdigFormula7 < Formula
   desc "test"
   homepage "fuck.com"
   url "https://raw.githubusercontent.com/ricky840/sdig/master/sdig.rb"
@@ -7,7 +7,7 @@ class SdigFormula6 < Formula
 
   def install
     system "ls -al"
-    bin.install "sdig_formula6.rb"
+    bin.install "sdig_formula7.rb"
   end
 
   test do
