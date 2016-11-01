@@ -6,10 +6,10 @@ class SdigFormula7 < Formula
   version "0.1"
 
   def install
-    bin.install "bin/sdig"
+    bin.install "sdig"
   end
 
   test do
-    # system "#{bin}/sdig"
+    system "#{bin}/sdig"
   end
 end
