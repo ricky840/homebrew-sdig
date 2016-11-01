@@ -6,6 +6,7 @@ class SdigFormula6 < Formula
   version "0.1"
 
   def install
+    system "ls -al"
     bin.install "sdig_formula6.rb"
   end
 
