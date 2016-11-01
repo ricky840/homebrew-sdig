@@ -3,6 +3,7 @@ class SdigFormula3 < Formula
   homepage "fuck.com"
   url "https://raw.githubusercontent.com/ricky840/sdig/master/sdig.rb"
   sha256 ""
+  version "0.1"
 
   def install
   end
