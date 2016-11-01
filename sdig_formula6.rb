@@ -1,4 +1,4 @@
-class SdigFormula5 < Formula
+class SdigFormula6 < Formula
   desc "test"
   homepage "fuck.com"
   url "https://raw.githubusercontent.com/ricky840/sdig/master/sdig.rb"
