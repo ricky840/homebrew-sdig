@@ -63,20 +63,21 @@ if staging_ip and staging_domain
   end
 end
 
-if options[:add] and staging_ip
-  ip = staging_ip.split("\n").first
-  cmd = "sudo sh -c 'echo #{ip.strip} #{domain.strip} >> /etc/hosts'"
+#Remove first
+if options[:remove]
+  cmd = %Q[sudo sh -c 'sed -i "" "/.*#{domain}/d" /etc/hosts']
   if system(cmd)
-    puts "#{ip} was added to the hosts file."
+    puts "Removed #{domain} from /etc/hosts."
   else
     puts "Oops something went wrong."
   end
 end
 
-if options[:remove]
-  cmd = %Q[sudo sh -c 'sed -i "" "/.*#{domain}/d" /etc/hosts']
+if options[:add] and staging_ip
+  ip = staging_ip.split("\n").first
+  cmd = "sudo sh -c 'echo #{ip.strip} #{domain.strip} >> /etc/hosts'"
   if system(cmd)
-    puts "Removed #{domain} from /etc/hosts."
+    puts "#{ip} was added to the hosts file."
   else
     puts "Oops something went wrong."
   end
