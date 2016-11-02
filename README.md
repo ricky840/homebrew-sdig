@@ -59,3 +59,10 @@ $ sdig www.akamai.com -e 7
 etn7.akamai.com(205.185.220.230) was added to /etc/hosts.
 ```
 
+Remove existing www.akamai.com from /etc/hosts and spoofing ETN test server IP address.
+```
+$ sdig www.akamai.com -re 7
+Removed www.akamai.com from /etc/hosts.
+etn10.akamai.com(96.16.96.53) was added to /etc/hosts.
+```
+
