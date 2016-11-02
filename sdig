@@ -1,66 +1,99 @@
 #!/usr/bin/env ruby
 
-unless (ARGV.length == 2 and ARGV[1] == '-') or ARGV.length == 1
-  puts "\n"
-  puts "Usage:"
-  puts "   sdig www.domain.com"
-  puts "   sdig www.domain.com <options>"
-  puts "\n"
-  puts "Options:"
-  puts "   -   Remove entry from the host file"
-  puts "\n"
+require 'optparse'
+
+options = Hash.new
+
+optparse = OptionParser.new do |opts|
+  opts.banner = "Usage: sdig www.foo.com [options]"
+
+  opts.on('-v', '--verbose', 'Verbose output. Print the whole DNS resolution chain.') do
+    options[:verbose] = true
+  end
+
+  opts.on('-a', '--add', 'Add staging IP spoofing to /etc/hosts.') do
+    options[:add] = true
+  end
+
+  opts.on('-r', '--remove', 'Remove all spoofing for the domain from /etc/hosts.') do
+    options[:remove] = true
+  end
+
+  opts.on('-e', '--etn NUMBER(1~11)', 'Add etn server spoofing to /etc/hosts.') do |number|
+    if not number.to_i.between?(1,11)
+      puts "Number should be between 1 ~ 11"
+      exit
+    end
+    options[:etn] = number
+  end
+
+  opts.on('-h', '--help', 'Display help message.') do
+    puts opts
+    exit
+  end
+end
+
+begin
+  optparse.parse!
+  if ARGV.length.eql? 0
+    raise OptionParser::MissingArgument
+  end
+rescue OptionParser::ParseError => e
+  # puts e.message
+  puts optparse
   exit
 end
 
-def add_ip_to_host(ipaddr, domain)
-  arr_ip = ipaddr.split
-  if arr_ip.length > 1
-    ipaddr = arr_ip.first
-  end
-  cmd = "sudo sh -c 'echo #{ipaddr.strip} #{domain.strip} >> /etc/hosts'"
-  if system(cmd)
-    puts "Succesfully added"
-  else
-    puts "Oops something happend, you might want to add it manually"
+domain = ARGV[0]
+staging_ip = false
+staging_domain = false
+
+arr_dig_result = %x[dig #{domain} +short].split("\n")
+arr_dig_result.each do |each|
+  puts each if options[:verbose]
+  if each =~ /.*akamaiedge\.net\./ or each =~ /.*akamai\.net\./
+    staging_domain = each.to_s.gsub(".net.", "-staging.net.")
+    staging_ip = %x[dig #{staging_domain} +short]
   end
 end
 
-domain = ARGV[0]
-if ARGV.length == 1
-  staging_ip = "NoIPwasFound"
-  arr_result = %x(dig #{domain} +short).split("\n")
-  arr_result.each do |each|
-    if each =~ /.*akamaiedge\.net\./ or each =~ /.*akamai\.net\./
-      staging_domain = each.to_s.gsub(".net.", "-staging.net.")
-      staging_ip = %x(dig #{staging_domain} +short)
-      puts "Staging IPs:"
-      puts staging_ip
-    end
+if staging_ip and staging_domain
+  if not options[:remove] and not options[:etn]
+    puts staging_domain, staging_ip
   end
+end
 
-  if not staging_ip == "NoIPwasFound"
-    while true
-      puts "Would you like to add the IP to the host file?(y/n)"
-      ARGV.clear
-      answer = gets.chomp
-      case answer
-        when "y"
-          add_ip_to_host(staging_ip, domain)
-          break
-        when "n"
-          puts "Bye!"
-          exit
-      end
-    end
-  elsif staging_ip =="NoIPwasFound"
-   puts "It seems the domain is not on Akamai"
-   puts %x(dig #{domain})
+if options[:add] and staging_ip
+  ip = staging_ip.split("\n").first
+  cmd = "sudo sh -c 'echo #{ip.strip} #{domain.strip} >> /etc/hosts'"
+  if system(cmd)
+    puts "#{ip} was added to the hosts file."
+  else
+    puts "Oops something went wrong."
   end
-else
+end
+
+if options[:remove]
   cmd = %Q[sudo sh -c 'sed -i "" "/.*#{domain}/d" /etc/hosts']
   if system(cmd)
-    puts "Entry removed"
+    puts "Removed #{domain} from /etc/hosts."
   else
-    puts "Shell command failed - please verify"
+    puts "Oops something went wrong."
   end
+end
+
+if options[:etn]
+  etn = options[:etn]
+  etn_ip = %x[dig etn#{etn}.akamai.com +short].split("\n").first
+  cmd = "sudo sh -c 'echo #{etn_ip.strip} #{domain.strip} >> /etc/hosts'"
+  if system(cmd)
+    puts "etn#{etn}.akamai.com(#{etn_ip}) was added to /etc/hosts."
+  else
+    puts "Oops something went wrong."
+  end
+end
+
+if not options[:remove] and not staging_ip
+  puts "#{ARGV[0]} is not CNAMEd to Akamai"
+  exit
 end
