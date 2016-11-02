@@ -2,7 +2,7 @@ class Akasdig < Formula
   desc "A little script does DNS lookup to get Akamai staging network IP address."
   homepage "www.akamai.com"
   url "https://raw.githubusercontent.com/ricky840/sdig/master/sdig"
-  sha256 "014c1a86c4e9e7a2c188174a009d21bdde4d95f1ba15b1dae8dbdc75bd536fa0"
+  sha256 "4ca01e00179f8fa659a606d2675dd2912309d60cac0da4f7dfe1628adec86296"
   version "0.1.1"
 
   def install
