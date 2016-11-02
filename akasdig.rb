@@ -3,7 +3,7 @@ class Akasdig < Formula
   homepage "www.akamai.com"
   url "https://raw.githubusercontent.com/ricky840/sdig/master/sdig"
   sha256 "4ca01e00179f8fa659a606d2675dd2912309d60cac0da4f7dfe1628adec86296"
-  version "0.1.1"
+  version "0.1.2"
 
   def install
     bin.install "sdig"
