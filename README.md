@@ -11,7 +11,8 @@ Usage
 Installation (using homebrew)
 ====
 ```
-  $ brew install https://raw.githubusercontent.com/ricky840/sdig/master/akasdig.rb
+  $ brew tap ricky840/akasdig
+  $ brew install akasdig
 ```
 Options
 ====
