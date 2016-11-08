@@ -98,3 +98,5 @@ if not options[:remove] and not staging_ip
   puts "#{ARGV[0]} is not CNAMEd to Akamai"
   exit
 end
+
+#test
