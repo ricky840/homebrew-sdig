@@ -1,11 +1,68 @@
 #!/usr/bin/env ruby
 
 require 'optparse'
+require 'json'
+require 'net/http'
+require 'terminal-table'
+
+def getDNSList
+  url = URI.parse('http://origin-www.datswatsup.com:8090/nameservers')
+  begin
+    res = Net::HTTP.get_response(url)
+    if res.code != "200" then raise "Wrong response. #{res.code}" end
+    res_parsed = JSON.parse(res.body)
+    return res.body
+  rescue Exception => e
+    puts "Failed to get DNS list. Error: #{e.message}"
+    exit
+  end
+end
 
 options = Hash.new
 
 optparse = OptionParser.new do |opts|
   opts.banner = "Usage: sdig www.foo.com [options]"
+
+  opts.on('-n', '--nameservers', 'Print out all Public DNS servers.') do
+    res_parsed = JSON.parse(getDNSList)
+
+    table = Terminal::Table.new do |t|
+      heading = []
+      res_parsed.each_with_index do |(key, value), index|
+        if value.class == Hash
+          t.add_row value.values.insert(0, key.upcase)
+          heading = value.keys.insert(0, "country_code").map {|each_title| 
+            if each_title == "availability"
+              each_title += "(%)"
+            end
+            each_title.capitalize
+          } if heading.empty?
+        end
+      end
+      t.headings = heading
+      t.title = "Public DNS Server List - Last updated at #{res_parsed["updated_at"]}"
+    end
+
+    puts table
+    exit
+  end
+
+  opts.on('-c', '--countrycode US', 'Country code of the name server to query. ex) kr, us') do |code|
+    res_parsed = JSON.parse(getDNSList)
+    res_parsed.each_with_index do |(key, value), index|
+      if key.downcase == code.downcase
+        options[:nameserver] = value["ipaddress"]
+      end
+    end
+    if options[:nameserver].nil? 
+      puts "Entered country code does not exist. Use -n to see the list of available country codes." 
+      exit
+    end
+  end
+
+  opts.on('-p', '--production', 'Use production domain. Do not add -staging.net.') do
+    options[:production] = true
+  end
 
   opts.on('-v', '--verbose', 'Verbose output. Print the whole DNS resolution chain.') do
     options[:verbose] = true
@@ -47,18 +104,28 @@ end
 domain = ARGV[0]
 staging_ip = false
 staging_domain = false
+nameserver = "@#{options[:nameserver]}" if options[:nameserver]
 
-arr_dig_result = %x[dig #{domain} +short].split("\n")
+arr_dig_result = %x[dig #{nameserver} #{domain} +short].split("\n")
 arr_dig_result.each do |each|
   puts each if options[:verbose]
   if each =~ /.*akamaiedge\.net\./ or each =~ /.*akamai\.net\./
-    staging_domain = each.to_s.gsub(".net.", "-staging.net.")
-    staging_ip = %x[dig #{staging_domain} +short]
+
+    #use production if set
+    if options[:production]
+      staging_domain = each.to_s
+    else
+      staging_domain = each.to_s.gsub(".net.", "-staging.net.")
+    end
+
+    cmd = "dig #{nameserver} #{staging_domain} +short"
+    staging_ip = %x[#{cmd}]
   end
 end
 
 if staging_ip and staging_domain
   if not options[:remove] and not options[:etn]
+    puts "Nameserver: #{options[:nameserver]}" if nameserver
     puts staging_domain, staging_ip
   end
 end
