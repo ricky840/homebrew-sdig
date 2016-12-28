@@ -30,7 +30,7 @@ class Akasdig < Formula
 
 		resources.each do |r|
       r.verify_download_integrity(r.fetch)
-      system("sudo", "gem", "install", r.fetch, "--no-document")
+      system("sudo", "gem", "install", r.cached_download, "--no-document")
     end
   end
 
