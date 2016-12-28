@@ -13,16 +13,16 @@ class Akasdig < Formula
   # depends_on "ruby-progressbar"
   # depends_on "thread/pool"
 
-  resource 'optparse' do
-    url 'https://rubygems.org/downloads/rubysl-optparse-2.0.1.gem'
-    sha256 '4fe37d7d7b0fc8a026007d7d3ef3b59d06dbc9386f4e4ff3d8ec11e583f85b02'
+  resource 'json' do
+    url 'https://rubygems.org/downloads/json-1.8.3.gem'
+    sha256 '8ca2091e26678fb989d66cdb9f0104f1307bc584b429c2fd783d51e4b3f14bdb'
   end
 
   def install
     bin.install "sdig"
 		resources.each do |r|
       r.verify_download_integrity(r.fetch)
-      system("gem", "install", r.cached_download, "--no-document")
+      system("sudo", "gem", "install", r.cached_download, "--no-document")
     end
   end
 
