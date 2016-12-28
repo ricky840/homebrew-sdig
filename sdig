@@ -4,9 +4,23 @@ require 'optparse'
 require 'json'
 require 'net/http'
 require 'terminal-table'
+require 'ipaddr'
+require 'ruby-progressbar'
+require 'thread/pool'
+
+URL = "http://sdig.edgesuite.net/nameservers"
+
+def ipaddr?(ipaddr)
+  begin
+    IPAddr.new ipaddr
+    return true
+  rescue IPAddr::Error, IPAddr::InvalidAddressError
+    return false
+  end
+end
 
 def getDNSList
-  url = URI.parse('http://origin-www.datswatsup.com:8090/nameservers')
+  url = URI.parse(URL)
   begin
     res = Net::HTTP.get_response(url)
     if res.code != "200" then raise "Wrong response. #{res.code}" end
@@ -16,6 +30,67 @@ def getDNSList
     puts "Failed to get DNS list. Error: #{e.message}"
     exit
   end
+end
+
+def runDig(domain, nameserver = nil, options={})
+  output, output_only_ip = "", ""
+  if not nameserver == nil
+    output = %x[dig @#{nameserver} #{domain} +short]
+  else
+    output = %x[dig #{domain} +short]
+  end
+  if not output.empty?
+    output_arr = output.split("\n")
+    output_arr.each do |each_line|
+      if ipaddr? each_line
+        output_only_ip += "#{each_line}\n"
+      end
+    end
+  end
+  if not options[:verbose]
+    output = output_only_ip
+  end
+  return output
+end
+
+def getStagingDomain(domain, options={})
+  staging_domain = ""
+  dig_result = runDig(domain, nil, :verbose => true).split("\n")
+  dig_result.each do |each|
+    if each =~ /.*akamaiedge\.net\./ or each =~ /.*akamai\.net\./
+      staging_domain = each.to_s.gsub(".net.", "-staging.net.")
+    end
+  end
+  if staging_domain.empty? 
+    return false
+  else
+    return staging_domain
+  end
+end
+
+def digAllCountry(domain, options={})
+  table = Terminal::Table.new
+  pool = Thread.pool(50)
+
+  res_parsed = JSON.parse(getDNSList)
+  number_of_dns = res_parsed.values.count {|obj| obj.class == Hash}
+  progressbar = ProgressBar.create(:total => number_of_dns, :format => '%t |%b>%i| %p%%', :title => "Digging..")
+
+  res_parsed.each_with_index do |(key, value), index|
+    pool.process {
+      if value.class == Hash
+        result = runDig(domain, value["ipaddress"], :verbose => options[:verbose])
+        table.add_row [key.upcase, value["country"], value["ipaddress"], result.empty? ? "unknown" : result]
+        progressbar.increment
+      end
+    }
+  end
+
+  pool.shutdown
+  table.headings = ["Country Code", "Country", "Namesever", "Results"]
+  table.style = {:all_separators => true}
+  puts table
+  exit
 end
 
 options = Hash.new
@@ -47,20 +122,26 @@ optparse = OptionParser.new do |opts|
     exit
   end
 
-  opts.on('-c', '--countrycode US', 'Country code of the name server to query. ex) kr, us') do |code|
-    res_parsed = JSON.parse(getDNSList)
-    res_parsed.each_with_index do |(key, value), index|
-      if key.downcase == code.downcase
-        options[:nameserver] = value["ipaddress"]
+  opts.on('-c', '--countrycode COUNTRY_CODE', 'Country code of the name server to query. ex) kr, us') do |code|
+    if not code.nil?
+      res_parsed = JSON.parse(getDNSList)
+      res_parsed.each_with_index do |(key, value), index|
+        if key.downcase == code.downcase
+          options[:nameserver] = value["ipaddress"]
+        end
       end
-    end
-    if options[:nameserver].nil? 
-      puts "Entered country code does not exist. Use -n to see the list of available country codes." 
-      exit
+      if options[:nameserver].nil? 
+        puts "Entered country code does not exist. Use -ns to see the list of available country codes." 
+        exit
+      end
     end
   end
 
-  opts.on('-p', '--production', 'Use production domain. Do not add -staging.net.') do
+  opts.on('-q', '--queryall', 'Query to all Public DNS servers available.') do 
+   options[:queryall] = true 
+  end
+
+  opts.on('-p', '--production', 'Use production domain. Does not add -staging.net.') do
     options[:production] = true
   end
 
@@ -68,15 +149,15 @@ optparse = OptionParser.new do |opts|
     options[:verbose] = true
   end
 
-  opts.on('-a', '--add', 'Add staging IP spoofing to /etc/hosts.') do
+  opts.on('-a', '--add', 'Add staging IP spoofing to hosts file.') do
     options[:add] = true
   end
 
-  opts.on('-r', '--remove', 'Remove all spoofing for the domain from /etc/hosts.') do
+  opts.on('-r', '--remove', 'Delete all spoofing for the domain from hosts file.') do
     options[:remove] = true
   end
 
-  opts.on('-e', '--etn NUMBER(1~11)', 'Add etn server spoofing to /etc/hosts.') do |number|
+  opts.on('-e', '--etn NUMBER(1~11)', 'Add ETN server spoofing to hosts file.') do |number|
     if not number.to_i.between?(1,11)
       puts "Number should be between 1 ~ 11"
       exit
@@ -101,69 +182,74 @@ rescue OptionParser::ParseError => e
   exit
 end
 
-domain = ARGV[0]
-staging_ip = false
-staging_domain = false
-nameserver = "@#{options[:nameserver]}" if options[:nameserver]
+#get result
+input_domain = ARGV[0]
+lookup_result = false
+lookup_domain = false
 
-arr_dig_result = %x[dig #{nameserver} #{domain} +short].split("\n")
-arr_dig_result.each do |each|
-  puts each if options[:verbose]
-  if each =~ /.*akamaiedge\.net\./ or each =~ /.*akamai\.net\./
+lookup_domain = getStagingDomain(input_domain)
 
-    #use production if set
-    if options[:production]
-      staging_domain = each.to_s
-    else
-      staging_domain = each.to_s.gsub(".net.", "-staging.net.")
-    end
-
-    cmd = "dig #{nameserver} #{staging_domain} +short"
-    staging_ip = %x[#{cmd}]
-  end
+if not lookup_domain
+  puts "Entered domain is not CNAMEd to Akamai." if not options[:remove]
+  options[:production] = true
 end
 
-if staging_ip and staging_domain
+if options[:production] then lookup_domain = input_domain end
+lookup_result = runDig(lookup_domain, options[:nameserver], :verbose => options[:verbose]) if lookup_domain
+
+if options[:queryall]
+  result = digAllCountry(lookup_domain, :verbose => options[:verbose])
+  exit
+end
+
+if lookup_result and lookup_domain
   if not options[:remove] and not options[:etn]
-    puts "Nameserver: #{options[:nameserver]}" if nameserver
-    puts staging_domain, staging_ip
+    puts "Nameserver: #{options[:nameserver]}" if options[:nameserver]
+    # puts lookup_domain, lookup_result
+    puts lookup_domain if options[:verbose]
+    puts lookup_result
   end
 end
 
-#Remove first
+#We have the result
 if options[:remove]
-  cmd = %Q[sudo sh -c 'sed -i "" "/.*#{domain}/d" /etc/hosts']
+  cmd = %Q[sudo sh -c 'sed -i "" "/.*#{input_domain}/d" /etc/hosts']
   if system(cmd)
-    puts "Removed #{domain} from /etc/hosts."
+    puts "Removed #{input_domain} from /etc/hosts."
   else
     puts "Oops something went wrong."
   end
 end
 
-if options[:add] and staging_ip
-  ip = staging_ip.split("\n").first
-  cmd = "sudo sh -c 'echo #{ip.strip} #{domain.strip} >> /etc/hosts'"
-  if system(cmd)
-    puts "#{ip} was added to the hosts file."
+if options[:add] and lookup_result
+  ip = String.new
+
+  lookup_result_arr = lookup_result.split("\n")
+  lookup_result_arr.each do |each_line|
+    if ipaddr? each_line
+      ip = each_line 
+    end
+  end
+
+  if not ip.empty?
+    cmd = "sudo sh -c 'echo #{ip} #{input_domain.strip} >> /etc/hosts'"
+    if system(cmd)
+      puts "#{ip} was added to the hosts file."
+    else
+      puts "Oops something went wrong."
+    end
   else
-    puts "Oops something went wrong."
+    puts "#{input_domain} does not have an A record."
   end
 end
 
 if options[:etn]
   etn = options[:etn]
   etn_ip = %x[dig etn#{etn}.akamai.com +short].split("\n").first
-  cmd = "sudo sh -c 'echo #{etn_ip.strip} #{domain.strip} >> /etc/hosts'"
+  cmd = "sudo sh -c 'echo #{etn_ip.strip} #{input_domain.strip} >> /etc/hosts'"
   if system(cmd)
     puts "etn#{etn}.akamai.com(#{etn_ip}) was added to /etc/hosts."
   else
     puts "Oops something went wrong."
   end
 end
-
-if not options[:remove] and not staging_ip
-  puts "#{ARGV[0]} is not CNAMEd to Akamai"
-  exit
-end
-
-#test
