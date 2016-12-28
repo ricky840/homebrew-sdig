@@ -14,7 +14,7 @@ class Akasdig < Formula
   # depends_on "thread/pool"
 
   resource 'optparse' do
-    url 'https://rubygems.org/downloads/rubysl-optparse-2.0.1.ge://rubygems.org/downloads/rubysl-optparse-2.0.1.gem'
+    url 'https://rubygems.org/downloads/rubysl-optparse-2.0.1.gem'
     sha256 '4fe37d7d7b0fc8a026007d7d3ef3b59d06dbc9386f4e4ff3d8ec11e583f85b02'
   end
 
