@@ -12,15 +12,18 @@ class Akasdig < Formula
   # depends_on "ipaddr"
   # depends_on "ruby-progressbar"
   # depends_on "thread/pool"
-  #
 
-  resource 'aws-sdk' do
-    url 'https://rubygems.org/gems/aws-sdk-2.6.29.gem'
-    sha256 '686ecaf63713d7a123cdfb1d746cc660236b6c8c3ac0b4f12b56479fa0542f06'
+  resource 'optparse' do
+    url 'https://rubygems.org/downloads/rubysl-optparse-2.0.1.ge://rubygems.org/downloads/rubysl-optparse-2.0.1.gem'
+    sha256 '4fe37d7d7b0fc8a026007d7d3ef3b59d06dbc9386f4e4ff3d8ec11e583f85b02'
   end
 
   def install
     bin.install "sdig"
+		resources.each do |r|
+      r.verify_download_integrity(r.fetch)
+      system("gem", "install", r.cached_download, "--no-document")
+    end
   end
 
   test do
