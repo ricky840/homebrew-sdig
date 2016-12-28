@@ -3,7 +3,7 @@ class Akasdig < Formula
   homepage "www.akamai.com"
   url "https://raw.githubusercontent.com/ricky840/homebrew-akasdig/master/sdig"
   sha256 "5298c225170f3aaaa9b60298dc48296e45fe5bc530cc7df4cd3427fad2f71239"
-  version "0.1.9"
+  version "0.2.1"
 
   resource 'json' do
     url 'https://rubygems.org/downloads/json-1.8.3.gem'
@@ -11,8 +11,8 @@ class Akasdig < Formula
   end
 
   resource 'terminal-table' do
-    url 'https://rubygems.org/downloads/terminal-table-1.5.2.gem'
-    sha256 '0e5d87e7c17b35e07b352ee2eee9049435321860295231e25a4f851c93f4d8e8'
+    url 'https://rubygems.org/downloads/terminal-table-1.7.3.gem'
+    sha256 'f10d5ff88f5596dfeb45d2cdf1ad35b8b8e347f58bcc7307a270af44176885a5'
   end
 
   resource 'ruby-progressbar' do
