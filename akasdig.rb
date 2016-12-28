@@ -3,7 +3,7 @@ class Akasdig < Formula
   homepage "www.akamai.com"
   url "https://raw.githubusercontent.com/ricky840/homebrew-akasdig/master/sdig"
   sha256 "5298c225170f3aaaa9b60298dc48296e45fe5bc530cc7df4cd3427fad2f71239"
-  version "0.1.7"
+  version "0.1.8"
 
   resource 'json' do
     url 'https://rubygems.org/downloads/json-1.8.3.gem'
@@ -30,7 +30,7 @@ class Akasdig < Formula
 
 		resources.each do |r|
       r.verify_download_integrity(r.fetch)
-      system("sudo", "gem", "install", r.cached_download, "--no-document")
+      system("sudo", "gem", "install", r.clear_cache, "--no-document")
     end
   end
 
